@@ -1,0 +1,18 @@
+version: "3"
+services:
+  server:
+    image: server
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:8080" 
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru 
