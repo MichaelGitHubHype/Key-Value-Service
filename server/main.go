@@ -10,28 +10,19 @@ var client *redis.Client;
 
 func handler(w http.ResponseWriter, req *http.Request) {
 	// Handle PUT requests 
-	short, ok := req.URL.Query()["key"]
-	long, ok2 := req.URL.Query()["value"]
+	key, ok := req.URL.Query()["key"]
+	value, ok2 := req.URL.Query()["value"]
 	if ok && ok2 {
-		handlePut(short[0], long[0])
+		client.Set(client.Context(), key[0], value[0], 0).Err()
 	} else {
-		short := req.URL.Path[1:]
-		handleGet(w, req, short)
+		key := req.URL.Path[1:]
+		value, err := client.Get(client.Context(), key).Result()
+		if err != nil {
+			http.NotFound(w, req)
+		} else {
+			w.Write([]byte(value))
+		}
 	}
-}
-
-
-func handleGet(w http.ResponseWriter, req *http.Request, key string) {
-	value, err := client.Get(client.Context(), key).Result()
-    if err != nil {
-		http.NotFound(w, req)
-	} else {
-		w.Write([]byte(value))
-	}
-}
-
-func handlePut(key string, value string) {
-	client.Set(client.Context(), key, value, 0).Err()
 }
 
 
@@ -47,6 +38,6 @@ func main() {
 
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		fmt.Printf("Got error %s\n", err)
+		fmt.Printf("Cannot start server. Error: %s\n", err)
 	}
 }
